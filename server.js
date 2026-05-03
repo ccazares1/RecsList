@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'places.json');
 
 // Set your admin PIN here, or via ADMIN_PIN environment variable on Render
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+const ADMIN_PIN = process.env.ADMIN_PIN || 'admin_2424';
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
