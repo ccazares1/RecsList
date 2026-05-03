@@ -26,7 +26,7 @@ function parseCSV(text) {
       if (key === 'lat' || key === 'lng') {
         obj[key] = val ? parseFloat(val) : null;
       } else {
-        obj[key] = val;
+        obj[key] = key === 'type' ? val.split(',').map(s => s.trim()).filter(Boolean) : val;
       }
     });
     return obj;
