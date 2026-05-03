@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Local Edit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F5F0E8;
+      --ink: #1A1713;
+      --warm-gray: #8C8479;
+      --accent: #C84B2F;
+      --accent-light: #E8D5CF;
+      --gold: #C9A84C;
+      --card-bg: #FDFAF4;
+      --border: #E2DAD0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      background: var(--cream);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .wordmark {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .wordmark span {
+      color: var(--accent);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .count-badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--warm-gray);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .btn-add {
+      background: var(--ink);
+      color: var(--cream);
+      border: none;
+      padding: 0.5rem 1.1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-kicker {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      max-width: 700px;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1rem;
+      color: var(--warm-gray);
+      max-width: 540px;
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      position: sticky;
+      top: 72px;
+      z-index: 90;
+      background: var(--cream);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      height: 58px;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      white-space: nowrap;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--warm-gray);
+      padding: 0.3rem 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      border-radius: 2px;
+    }
+    .chip:hover { border-color: var(--ink); color: var(--ink); }
+    .chip.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--cream);
+    }
+
+    .filter-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      margin-left: auto;
+      display: flex;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--warm-gray);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .view-btn.active {
+      background: var(--ink);
+      color: var(--cream);
+    }
+    .view-btn:not(.active):hover { background: var(--accent-light); color: var(--ink); }
+    .view-btn + .view-btn { border-left: 1px solid var(--border); }
+
+    /* ── MAIN CONTENT ── */
+    .content-area {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .results-meta {
+      font-size: 0.78rem;
+      color: var(--warm-gray);
+      margin-bottom: 1.75rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── LIST VIEW ── */
+    .places-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .place-card {
+      background: var(--card-bg);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      position: relative;
+      transition: background 0.15s;
+      cursor: default;
+    }
+    .place-card:hover { background: #fff; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .card-emoji {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .card-badges {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 1px;
+    }
+
+    .badge-type {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .badge-hood {
+      background: var(--cream);
+      color: var(--warm-gray);
+      border: 1px solid var(--border);
+    }
+
+    .badge-price {
+      background: transparent;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: var(--warm-gray);
+      font-weight: 300;
+    }
+
+    .card-order {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .order-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+      padding-top: 0.1rem;
+    }
+
+    .order-value {
+      font-size: 0.82rem;
+      color: var(--ink);
+      font-weight: 400;
+    }
+
+    .card-address {
+      font-size: 0.75rem;
+      color: var(--warm-gray);
+      opacity: 0.7;
+    }
+
+    .card-delete {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      opacity: 0;
+      color: var(--warm-gray);
+      font-size: 0.85rem;
+      padding: 0.25rem;
+      transition: opacity 0.15s, color 0.15s;
+      line-height: 1;
+    }
+    .place-card:hover .card-delete { opacity: 1; }
+    .card-delete:hover { color: var(--accent); }
+
+    /* empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--warm-gray);
+    }
+    .empty-state p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-style: italic;
+      margin-bottom: 0.5rem;
+    }
+    .empty-state span { font-size: 0.85rem; }
+
+    /* ── MAP VIEW ── */
+    #map-view {
+      display: none;
+    }
+
+    #map-container {
+      height: calc(100vh - 200px);
+      min-height: 500px;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    #leaflet-map {
+      height: 100%;
+      width: 100%;
+    }
+
+    .map-sidebar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 320px;
+      height: 100%;
+      background: var(--card-bg);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      z-index: 1000;
+      scrollbar-width: thin;
+    }
+
+    .map-sidebar-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--warm-gray);
+    }
+
+    .map-place-item {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .map-place-item:hover { background: var(--cream); }
+    .map-place-item.highlighted { background: var(--accent-light); }
+
+    .map-item-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .map-item-meta {
+      font-size: 0.75rem;
+      color: var(--warm-gray);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Leaflet popup override */
+    .leaflet-popup-content-wrapper {
+      background: var(--ink);
+      color: var(--cream);
+      border-radius: 2px;
+      box-shadow: none;
+    }
+    .leaflet-popup-tip { background: var(--ink); }
+    .leaflet-popup-content {
+      margin: 10px 14px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .popup-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .popup-meta {
+      font-size: 0.72rem;
+      opacity: 0.7;
+    }
+    .popup-order {
+      font-size: 0.75rem;
+      color: var(--gold);
+      margin-top: 5px;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,23,19,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+
+    .modal-header {
+      padding: 1.5rem 1.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-style: italic;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--warm-gray);
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--accent); }
+
+    .modal-body {
+      padding: 1.5rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-field label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s;
+      border-radius: 0;
+      -webkit-appearance: none;
+    }
+    .form-field input:focus,
+    .form-field textarea:focus,
+    .form-field select:focus {
+      border-color: var(--ink);
+    }
+    .form-field textarea { resize: vertical; min-height: 90px; }
+
+    .modal-footer {
+      padding: 1rem 1.75rem 1.5rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--warm-gray);
+      padding: 0.6rem 1.2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: var(--ink); color: var(--ink); }
+
+    .btn-save {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1.4rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--ink); }
+
+    .hint {
+      font-size: 0.72rem;
+      color: var(--warm-gray);
+      font-style: italic;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 700px) {
+      .hero h1 { font-size: 2rem; }
+      .filter-inner { gap: 0.75rem; height: auto; padding: 0.65rem 1rem; flex-wrap: wrap; }
+      .content-area { padding: 1.25rem 1rem; }
+      .places-grid { grid-template-columns: 1fr; }
+      .map-sidebar { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .hero { padding: 2rem 1rem 1.5rem; }
+      header { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="#">The Local <span>Edit</span></a>
+      <div class="header-right">
+        <span class="count-badge" id="count-badge">— spots</span>
+        <button class="btn-add" onclick="openModal()">+ Add a Spot</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <p class="hero-kicker">A personal guide by yours truly</p>
+    <h1>The places worth your time.</h1>
+    <p>Handpicked recommendations for eating, drinking, and spending time in this city — updated whenever I find somewhere new.</p>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-inner">
+      <span class="filter-label">Type</span>
+      <div class="filter-chips" id="type-chips"></div>
+
+      <div class="filter-divider"></div>
+
+      <span class="filter-label">Neighborhood</span>
+      <div class="filter-chips" id="hood-chips"></div>
+
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-list" onclick="setView('list')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect y="0" width="12" height="2"/><rect y="5" width="12" height="2"/><rect y="10" width="12" height="2"/></svg>
+          List
+        </button>
+        <button class="view-btn" id="btn-map" onclick="setView('map')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6 0C3.79 0 2 1.79 2 4c0 3 4 8 4 8s4-5 4-8c0-2.21-1.79-4-4-4zm0 5.5C5.17 5.5 4.5 4.83 4.5 4S5.17 2.5 6 2.5 7.5 3.17 7.5 4 6.83 5.5 6 5.5z"/></svg>
+          Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="list-view">
+    <div class="content-area">
+      <p class="results-meta" id="results-meta"></p>
+      <div class="places-grid" id="places-grid"></div>
+    </div>
+  </div>
+
+  <!-- MAP VIEW -->
+  <div id="map-view">
+    <div class="content-area" style="padding-bottom:0;">
+      <p class="results-meta" id="results-meta-map" style="margin-bottom:1rem;"></p>
+    </div>
+    <div style="max-width:1280px;margin:0 auto;padding:0 2rem 2rem;">
+      <div id="map-container">
+        <div id="leaflet-map"></div>
+        <div class="map-sidebar">
+          <div class="map-sidebar-header" id="map-sidebar-header">All Spots</div>
+          <div id="map-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD MODAL -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Add a new spot</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field">
+          <label>Name *</label>
+          <input type="text" id="f-name" placeholder="e.g. Café du Monde" />
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Type *</label>
+            <input type="text" id="f-type" list="type-list" placeholder="e.g. Bakery, Bar…" />
+            <datalist id="type-list"></datalist>
+          </div>
+          <div class="form-field">
+            <label>Neighborhood *</label>
+            <input type="text" id="f-hood" list="hood-list" placeholder="e.g. Uptown" />
+            <datalist id="hood-list"></datalist>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Address</label>
+          <input type="text" id="f-address" placeholder="Street address" />
+        </div>
+        <div class="form-field">
+          <label>Your take *</label>
+          <textarea id="f-desc" placeholder="What makes this place worth going? Write like you're texting a friend."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Must order</label>
+            <input type="text" id="f-order" placeholder="e.g. Croissant, Espresso" />
+          </div>
+          <div class="form-field">
+            <label>Price range</label>
+            <select id="f-price">
+              <option value="$">$ — Cheap</option>
+              <option value="$$" selected>$$ — Moderate</option>
+              <option value="$$$">$$$ — Splurge</option>
+              <option value="$$$$">$$$$ — Special occasion</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Emoji (optional)</label>
+          <input type="text" id="f-emoji" placeholder="🍕" maxlength="4" />
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Latitude <span class="hint">(for map pin)</span></label>
+            <input type="number" id="f-lat" step="any" placeholder="e.g. 29.9572" />
+          </div>
+          <div class="form-field">
+            <label>Longitude <span class="hint">(for map pin)</span></label>
+            <input type="number" id="f-lng" step="any" placeholder="e.g. -90.0615" />
+          </div>
+        </div>
+        <p class="hint">Tip: Find lat/lng at <a href="https://maps.google.com" target="_blank" style="color:var(--accent)">maps.google.com</a> → right-click a location → copy coordinates.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="savePlace()">Add to the guide</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allPlaces = [];
+    let activeType = 'All';
+    let activeHood = 'All';
+    let currentView = 'list';
+    let leafletMap = null;
+    let markers = [];
+    let highlightedItem = null;
+
+    // ── FETCH ──
+    async function loadPlaces() {
+      const res = await fetch('/api/places');
+      allPlaces = await res.json();
+      buildFilters();
+      render();
+    }
+
+    // ── FILTERS ──
+    function buildFilters() {
+      const types = ['All', ...new Set(allPlaces.map(p => p.type))].sort((a,b) => a==='All'?-1:b==='All'?1:a.localeCompare(b));
+      const hoods = ['All', ...new Set(allPlaces.map(p => p.neighborhood))].sort((a,b) => a==='All'?-1:b==='All'?1:a.localeCompare(b));
+
+      renderChips('type-chips', types, activeType, (v) => { activeType = v; render(); });
+      renderChips('hood-chips', hoods, activeHood, (v) => { activeHood = v; render(); });
+
+      // datalists for add form
+      const tl = document.getElementById('type-list');
+      tl.innerHTML = [...new Set(allPlaces.map(p => p.type))].map(t => `<option value="${t}">`).join('');
+      const hl = document.getElementById('hood-list');
+      hl.innerHTML = [...new Set(allPlaces.map(p => p.neighborhood))].map(h => `<option value="${h}">`).join('');
+    }
+
+    function renderChips(containerId, values, active, onClick) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = values.map(v => `
+        <button class="chip ${v === active ? 'active' : ''}" onclick="(${onClick.toString()})(this.dataset.val)" data-val="${v}">${v}</button>
+      `).join('');
+    }
+
+    function filtered() {
+      return allPlaces.filter(p =>
+        (activeType === 'All' || p.type === activeType) &&
+        (activeHood === 'All' || p.neighborhood === activeHood)
+      );
+    }
+
+    // ── RENDER ──
+    function render() {
+      buildFilters();
+      const places = filtered();
+      const total = allPlaces.length;
+      const showing = places.length;
+
+      document.getElementById('count-badge').textContent = `${total} spot${total !== 1 ? 's' : ''}`;
+      document.getElementById('results-meta').textContent =
+        showing === total ? `${total} places` : `${showing} of ${total} places`;
+      document.getElementById('results-meta-map').textContent =
+        showing === total ? `${total} places on the map` : `${showing} of ${total} places`;
+
+      renderCards(places);
+      if (currentView === 'map') renderMap(places);
+    }
+
+    function renderCards(places) {
+      const grid = document.getElementById('places-grid');
+      if (!places.length) {
+        grid.innerHTML = `<div class="empty-state"><p>Nothing here yet.</p><span>Try adjusting the filters or add a new spot.</span></div>`;
+        return;
+      }
+      grid.innerHTML = places.map(p => `
+        <div class="place-card">
+          <button class="card-delete" onclick="deletePlace(${p.id})" title="Remove">✕</button>
+          <div class="card-top">
+            <span class="card-emoji">${p.emoji || '📍'}</span>
+            <div class="card-badges">
+              <span class="badge badge-type">${p.type}</span>
+              <span class="badge badge-hood">${p.neighborhood}</span>
+              <span class="badge badge-price">${p.priceRange || ''}</span>
+            </div>
+          </div>
+          <div class="card-name">${p.name}</div>
+          <div class="card-desc">${p.description}</div>
+          ${p.mustOrder ? `
+          <div class="card-order">
+            <span class="order-label">Order</span>
+            <span class="order-value">${p.mustOrder}</span>
+          </div>` : ''}
+          ${p.address ? `<div class="card-address">${p.address}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // ── MAP ──
+    function renderMap(places) {
+      if (!leafletMap) {
+        leafletMap = L.map('leaflet-map', { zoomControl: true });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '© OpenStreetMap © CartoDB',
+          maxZoom: 19
+        }).addTo(leafletMap);
+      }
+
+      // Clear old markers
+      markers.forEach(m => m.marker.remove());
+      markers = [];
+
+      const pinIcon = (emoji) => L.divIcon({
+        className: '',
+        html: `<div style="
+          background:${getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1A1713'};
+          color:#F5F0E8;
+          width:32px;height:32px;
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          display:flex;align-items:center;justify-content:center;
+          font-size:14px;
+          box-shadow:0 2px 6px rgba(0,0,0,0.25);
+        "><span style="transform:rotate(45deg)">${emoji || '📍'}</span></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -34]
+      });
+
+      const validPlaces = places.filter(p => p.lat && p.lng);
+
+      validPlaces.forEach((p, i) => {
+        const marker = L.marker([p.lat, p.lng], { icon: pinIcon(p.emoji) })
+          .addTo(leafletMap)
+          .bindPopup(`
+            <div class="popup-name">${p.name}</div>
+            <div class="popup-meta">${p.type} · ${p.neighborhood}</div>
+            ${p.mustOrder ? `<div class="popup-order">→ ${p.mustOrder}</div>` : ''}
+          `);
+        marker.on('click', () => highlightSidebar(p.id));
+        markers.push({ id: p.id, marker });
+      });
+
+      if (validPlaces.length) {
+        const bounds = L.latLngBounds(validPlaces.map(p => [p.lat, p.lng]));
+        leafletMap.fitBounds(bounds, { padding: [40, 360] });
+      }
+
+      // Sidebar list
+      const list = document.getElementById('map-list');
+      document.getElementById('map-sidebar-header').textContent = `${places.length} spot${places.length!==1?'s':''}`;
+      list.innerHTML = places.map(p => `
+        <div class="map-place-item" id="map-item-${p.id}" onclick="flyTo(${p.id})">
+          <div class="map-item-name">${p.emoji || '📍'} ${p.name}</div>
+          <div class="map-item-meta">
+            <span>${p.type}</span>
+            <span>·</span>
+            <span>${p.neighborhood}</span>
+            ${p.priceRange ? `<span>·</span><span style="color:var(--gold)">${p.priceRange}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function flyTo(id) {
+      const found = markers.find(m => m.id === id);
+      if (found) {
+        found.marker.openPopup();
+        leafletMap.panTo(found.marker.getLatLng(), { animate: true });
+      }
+      highlightSidebar(id);
+    }
+
+    function highlightSidebar(id) {
+      if (highlightedItem) document.getElementById(`map-item-${highlightedItem}`)?.classList.remove('highlighted');
+      const el = document.getElementById(`map-item-${id}`);
+      if (el) { el.classList.add('highlighted'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      highlightedItem = id;
+    }
+
+    // ── VIEW SWITCH ──
+    function setView(v) {
+      currentView = v;
+      document.getElementById('list-view').style.display = v === 'list' ? 'block' : 'none';
+      document.getElementById('map-view').style.display = v === 'map' ? 'block' : 'none';
+      document.getElementById('btn-list').classList.toggle('active', v === 'list');
+      document.getElementById('btn-map').classList.toggle('active', v === 'map');
+      if (v === 'map') {
+        renderMap(filtered());
+        setTimeout(() => leafletMap && leafletMap.invalidateSize(), 100);
+      }
+    }
+
+    // ── MODAL ──
+    function openModal() {
+      document.getElementById('modal').classList.add('open');
+    }
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+      ['f-name','f-type','f-hood','f-address','f-desc','f-order','f-emoji','f-lat','f-lng'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('f-price').value = '$$';
+    }
+    document.getElementById('modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    async function savePlace() {
+      const name = document.getElementById('f-name').value.trim();
+      const type = document.getElementById('f-type').value.trim();
+      const neighborhood = document.getElementById('f-hood').value.trim();
+      const description = document.getElementById('f-desc').value.trim();
+      if (!name || !type || !neighborhood || !description) {
+        alert('Please fill in the required fields (Name, Type, Neighborhood, Your take).');
+        return;
+      }
+      const place = {
+        name,
+        type,
+        neighborhood,
+        address: document.getElementById('f-address').value.trim(),
+        description,
+        mustOrder: document.getElementById('f-order').value.trim(),
+        priceRange: document.getElementById('f-price').value,
+        emoji: document.getElementById('f-emoji').value.trim() || '📍',
+        lat: parseFloat(document.getElementById('f-lat').value) || null,
+        lng: parseFloat(document.getElementById('f-lng').value) || null,
+      };
+      await fetch('/api/places', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(place)
+      });
+      closeModal();
+      await loadPlaces();
+    }
+
+    async function deletePlace(id) {
+      if (!confirm('Remove this spot from the guide?')) return;
+      await fetch(`/api/places/${id}`, { method: 'DELETE' });
+      await loadPlaces();
+    }
+
+    // ── INIT ──
+    loadPlaces();
+    setView('list');
+  </script>
+</body>
+</html>
