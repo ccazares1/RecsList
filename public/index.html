@@ -694,6 +694,14 @@
     <div class="filter-panel-inner">
 
       <div class="filter-group">
+        <span class="filter-group-label">City</span>
+        <select class="filter-select" id="city-select" onchange="onCityChange(this.value)">
+          <option value="All">All cities</option>
+        </select>
+        <span class="filter-active-indicator" id="city-dot"></span>
+      </div>
+      
+      <div class="filter-group">
         <span class="filter-group-label">Type</span>
         <select class="filter-select" id="type-select" onchange="onTypeChange(this.value)">
           <option value="All">All types</option>
@@ -844,6 +852,7 @@
     let allPlaces = [];
     let activeType = 'All';
     let activeHood = 'All';
+    let activeCity = 'All';
     let currentView = 'list';
     let leafletMap = null;
     let markers = [];
@@ -859,9 +868,13 @@
     function buildSelects() {
       const types = [...new Set(allPlaces.flatMap(p => Array.isArray(p.type) ? p.type : [p.type]))].sort();
       const hoods = [...new Set(allPlaces.flatMap(p => Array.isArray(p.neighborhood) ? p.neighborhood : [p.neighborhood]))].sort();
+      const cities = [...new Set(allPlaces.flatMap(p => Array.isArray(p.city) ? p.city : [p.city]))].sort();
 
       const typeSelect = document.getElementById('type-select');
       const hoodSelect = document.getElementById('hood-select');
+      const citySelect = document.getElementById('city-select');
+        citySelect.innerHTML = `<option value="All">All cities</option>` +
+        cities.map(c => `<option value="${c}" ${c===activeCity?'selected':''}>${c}</option>`).join('');
 
       typeSelect.innerHTML = `<option value="All">All types</option>` +
         types.map(t => `<option value="${t}" ${t===activeType?'selected':''}>${t}</option>`).join('');
@@ -872,6 +885,7 @@
       document.getElementById('hood-list').innerHTML = hoods.map(h => `<option value="${h}">`).join('');
     }
 
+    function onCityChange(v) { activeCity = v; render(); }
     function onTypeChange(v) { activeType = v; render(); }
     function onHoodChange(v) { activeHood = v; render(); }
 
@@ -880,11 +894,14 @@
       activeHood = 'All';
       document.getElementById('type-select').value = 'All';
       document.getElementById('hood-select').value = 'All';
+      activeCity = 'All';
+        document.getElementById('city-select').value = 'All';
       render();
     }
 
     function filtered() {
       return allPlaces.filter(p =>
+        (activeCity === 'All' || (Array.isArray(p.city) ? p.city.includes(activeCity) : p.city === activeCity)) &&
         (activeType === 'All' || (Array.isArray(p.type) ? p.type.includes(activeType) : p.type === activeType)) &&
         (activeHood === 'All' || (Array.isArray(p.neighborhood) ? p.neighborhood.includes(activeHood) : p.neighborhood === activeHood))
       );
@@ -897,6 +914,7 @@
       const filtersOn = activeType !== 'All' || activeHood !== 'All';
 
       document.getElementById('count-badge').textContent = `${total} spot${total !== 1 ? 's' : ''}`;
+      document.getElementById('city-dot').classList.toggle('show', activeCity !== 'All');
       document.getElementById('type-dot').classList.toggle('show', activeType !== 'All');
       document.getElementById('hood-dot').classList.toggle('show', activeHood !== 'All');
       document.getElementById('clear-btn').classList.toggle('show', filtersOn);
