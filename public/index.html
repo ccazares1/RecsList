@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Local Edit</title>
+  <title>Carlos' Local Guide</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -672,7 +672,7 @@
 
   <header>
     <div class="header-inner">
-      <a class="wordmark" href="#">The Local <em>Edit</em></a>
+      <a class="wordmark" href="#">Carlos' Local <em>Guide</em></a>
       <div class="header-right">
         <span class="count-badge" id="count-badge">— spots</span>
         <a class="btn-add" id="github-link" href="https://github.com" target="_blank" title="Open your GitHub repo to edit places.csv">Edit CSV</a>
@@ -682,9 +682,9 @@
 
   <div class="hero">
     <div class="hero-inner">
-      <p class="hero-kicker">// A personal guide</p>
+      <p class="hero-kicker">A personal guide</p>
       <h1>The places<br>worth your time.</h1>
-      <p class="hero-sub">Handpicked recommendations — eating, drinking, and spending time well. Updated whenever I find somewhere new.</p>
+      <p class="hero-sub">Personal recommendations — eating, drinking, and spending time well. Updated whenever I find somewhere new and time.</p>
     </div>
   </div>
 
@@ -856,8 +856,8 @@
     }
 
     function buildSelects() {
-      const types = [...new Set(allPlaces.map(p => p.type))].sort();
-      const hoods = [...new Set(allPlaces.map(p => p.neighborhood))].sort();
+      const types = [...new Set(allPlaces.flatMap(p => Array.isArray(p.type) ? p.type : [p.type]))].sort();
+      const types = [...new Set(allPlaces.flatMap(p => Array.isArray(p.neighborhood) ? p.neighborhood : [p.neighborhood]))].sort();
 
       const typeSelect = document.getElementById('type-select');
       const hoodSelect = document.getElementById('hood-select');
@@ -884,8 +884,8 @@
 
     function filtered() {
       return allPlaces.filter(p =>
-        (activeType === 'All' || p.type === activeType) &&
-        (activeHood === 'All' || p.neighborhood === activeHood)
+        (activeType === 'All' || (Array.isArray(p.type) ? p.type.includes(activeType) : p.type === activeType)) &&
+        (activeHood === 'All' || (Array.isArray(p.neighborhood) ? p.neighborhood.includes(activeHood) : p.neighborhood === activeHood))
       );
     }
 
@@ -926,8 +926,8 @@
           <div class="card-top">
             <span class="card-emoji">${p.emoji || '📍'}</span>
             <div class="card-badges">
-              <span class="badge badge-type">${p.type}</span>
-              <span class="badge badge-hood">${p.neighborhood}</span>
+              <span class="badge badge-type">${Array.isArray(p.type) ? p.type.join(', ') : p.type}</span>
+              <span class="badge badge-hood">${Array.isArray(p.neighborhood) ? p.neighborhood.join(', ') : p.neighborhood}</span>
               <span class="badge badge-price">${p.priceRange || ''}</span>
             </div>
           </div>
