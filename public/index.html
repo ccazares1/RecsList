@@ -857,7 +857,7 @@
 
     function buildSelects() {
       const types = [...new Set(allPlaces.flatMap(p => Array.isArray(p.type) ? p.type : [p.type]))].sort();
-      const types = [...new Set(allPlaces.flatMap(p => Array.isArray(p.neighborhood) ? p.neighborhood : [p.neighborhood]))].sort();
+      const hoods = [...new Set(allPlaces.flatMap(p => Array.isArray(p.neighborhood) ? p.neighborhood : [p.neighborhood]))].sort();
 
       const typeSelect = document.getElementById('type-select');
       const hoodSelect = document.getElementById('hood-select');
