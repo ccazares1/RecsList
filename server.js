@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CSV_FILE = path.join(__dirname, 'places.csv');
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+const ADMIN_PIN = process.env.ADMIN_PIN || 'admin_2424';
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -26,7 +26,7 @@ function parseCSV(text) {
       if (key === 'lat' || key === 'lng') {
         obj[key] = val ? parseFloat(val) : null;
       } else {
-        obj[key] = (key === 'type' || key === 'neighborhood') ? val.split(',').map(s => s.trim()).filter(Boolean) : val;
+        obj[key] = (key === 'type' || key === 'neighborhood' || key === 'city') ? val.split(',').map(s => s.trim()).filter(Boolean) : val;
       }
     });
     return obj;
