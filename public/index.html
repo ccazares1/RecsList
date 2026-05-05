@@ -733,10 +733,20 @@
               ${p.priceRange ? `<span class="badge badge-price">${p.priceRange}</span>` : ''}
             </div>
           </div>
-          <div class="card-name">${p.name}</div>
+          <div class="card-name">
+            ${p.lat && p.lng
+            ? `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank" style="color:inherit;text-decoration:none;">${p.name}</a>`
+            : p.name}
+          </div>
           <div class="card-desc">${p.description}</div>
           ${p.mustOrder ? `<div class="card-order"><span class="order-label">Order</span><span class="order-value">${p.mustOrder}</span></div>` : ''}
-          ${p.address ? `<div class="card-address">${p.address}</div>` : ''}
+          ${p.address
+            ? `<div class="card-address">
+              <a href="https://maps.google.com/?q=${encodeURIComponent(p.address)}" target="_blank" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--border-strong);">
+                ${p.address}
+              </a>
+            </div>`
+          : ''}
         </div>
       `).join('');
     }
