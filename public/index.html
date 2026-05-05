@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carlos' Local Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #FFFFFF;
+      --surface:       #F7F5F2;
+      --surface2:      #EFEDE9;
+      --ink:           #1F1E1C;
+      --ink-mid:       #4B4843;
+      --ink-light:     #90897F;
+      --border:        #E2DDD7;
+      --border-strong: #C8C2BA;
+      --accent:        #2B5C3F;
+      --accent-light:  #EAF2EC;
+      --accent2:       #8B4F1A;
+      --accent2-light: #F7EDE3;
+      --gold:          #9A7230;
+      --mono:          'IBM Plex Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .wordmark {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      text-decoration: none;
+      line-height: 1;
+    }
+    .wordmark em {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .count-badge {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.65rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 2rem 2.5rem;
+    }
+
+    .hero-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-kicker {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 5.5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .hero-sub {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--ink-light);
+      max-width: 440px;
+      line-height: 1.75;
+      font-weight: 300;
+    }
+
+    .hero-rule {
+      width: 40px;
+      height: 3px;
+      background: var(--accent);
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── FILTER PANEL ── */
+    .filter-panel {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 64px;
+      z-index: 90;
+    }
+
+    .filter-panel-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .filter-group-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .filter-select {
+      flex: 1;
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%2390897F' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 0.65rem center;
+      border: 1px solid var(--border-strong);
+      color: var(--ink);
+      padding: 0.42rem 1.9rem 0.42rem 0.7rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      border-radius: 4px;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+    .filter-select:hover { border-color: var(--ink-mid); }
+
+    .filter-active-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      display: none;
+    }
+    .filter-active-indicator.show { display: block; }
+
+    .filter-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .filter-panel-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .clear-btn {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      color: var(--ink-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: color 0.12s;
+      display: none;
+      white-space: nowrap;
+    }
+    .clear-btn.show { display: block; }
+    .clear-btn:hover { color: var(--accent); }
+
+    .view-toggle {
+      display: flex;
+      border: 1px solid var(--border-strong);
+      overflow: hidden;
+      border-radius: 4px;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      padding: 0.38rem 0.8rem;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      color: var(--ink-mid);
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .view-btn.active { background: var(--accent); color: #fff; }
+    .view-btn:not(.active):hover { background: var(--surface2); }
+    .view-btn + .view-btn { border-left: 1px solid var(--border-strong); }
+
+    /* ── CONTENT ── */
+    .content-area {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .results-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .results-meta {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
+    }
+
+    .active-filters-summary {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── CARDS ── */
+    .places-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .place-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .place-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border-color: var(--border-strong);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .card-emoji {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .card-badges {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+    }
+    .badge-type { background: var(--accent-light); color: var(--accent); }
+    .badge-hood { background: var(--surface2); color: var(--ink-mid); border: 1px solid var(--border); }
+    .badge-city { background: var(--accent2-light); color: var(--accent2); }
+    .badge-price { color: var(--gold); font-weight: 600; background: transparent; }
+
+    .card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .card-desc {
+      font-size: 0.855rem;
+      line-height: 1.72;
+      color: var(--ink-mid);
+      font-weight: 300;
+    }
+
+    .card-order {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .order-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+      padding-top: 0.1rem;
+    }
+
+    .order-value {
+      font-size: 0.82rem;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .card-address {
+      font-family: var(--mono);
+      font-size: 0.64rem;
+      color: var(--ink-light);
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 4rem 2rem;
+      text-align: center;
+      border: 1px dashed var(--border-strong);
+      border-radius: 8px;
+    }
+    .empty-state p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink-light);
+      margin-bottom: 0.4rem;
+    }
+    .empty-state span {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--border-strong);
+    }
+
+    /* ── MAP VIEW ── */
+    #map-view { display: none; }
+
+    .map-wrapper {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 2rem 2rem;
+    }
+
+    #map-container {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #leaflet-map {
+      height: 55vw;
+      min-height: 320px;
+      max-height: 520px;
+      width: 100%;
+    }
+
+    .map-sidebar {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      max-height: 280px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+
+    .map-sidebar-header {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+
+    .map-place-item {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .map-place-item:hover { background: var(--surface); }
+    .map-place-item.highlighted {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+    }
+
+    .map-item-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      color: var(--ink);
+    }
+
+    .map-item-meta {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--ink-light);
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    @media (min-width: 768px) {
+      #map-container { flex-direction: row; height: 520px; }
+      #leaflet-map { height: 100%; max-height: none; flex: 1; }
+      .map-sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        max-height: none;
+        height: 100%;
+      }
+    }
+
+    /* Leaflet popup */
+    .leaflet-popup-content-wrapper {
+      background: var(--ink);
+      color: #fff;
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .leaflet-popup-tip { background: var(--ink); }
+    .leaflet-popup-content { margin: 10px 14px; font-family: 'Inter', sans-serif; }
+    .popup-name { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .popup-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; opacity: 0.6; }
+    .popup-order { font-size: 0.75rem; color: #7DC49A; margin-top: 5px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 680px) {
+      header { padding: 0 1rem; }
+      .hero { padding: 2rem 1rem 1.75rem; }
+      .filter-panel-inner { padding: 0.6rem 1rem; gap: 0.5rem; }
+      .filter-group { flex: 1 1 100%; min-width: 0; }
+      .filter-divider { display: none; }
+      .filter-panel-right { width: 100%; justify-content: space-between; margin-left: 0; }
+      .content-area { padding: 1.25rem 1rem; }
+      .places-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+      .map-wrapper { padding: 0 1rem 1.5rem; }
+      .count-badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="#">Carlos' <em>Local Guide</em></a>
+      <div class="header-right">
+        <span class="count-badge" id="count-badge">— spots</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-rule"></div>
+        <p class="hero-kicker">A personal guide</p>
+        <h1>The places worth<br>your time.</h1>
+        <p class="hero-sub">Handpicked recommendations for eating, drinking, and spending time well — across every city I know.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER PANEL -->
+  <div class="filter-panel">
+    <div class="filter-panel-inner">
+
+      <div class="filter-group">
+        <span class="filter-group-label">City</span>
+        <select class="filter-select" id="city-select" onchange="onCityChange(this.value)">
+          <option value="All">All cities</option>
+        </select>
+        <span class="filter-active-indicator" id="city-dot"></span>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group">
+        <span class="filter-group-label">Type</span>
+        <select class="filter-select" id="type-select" onchange="onTypeChange(this.value)">
+          <option value="All">All types</option>
+        </select>
+        <span class="filter-active-indicator" id="type-dot"></span>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group">
+        <span class="filter-group-label">Neighborhood</span>
+        <select class="filter-select" id="hood-select" onchange="onHoodChange(this.value)">
+          <option value="All">All neighborhoods</option>
+        </select>
+        <span class="filter-active-indicator" id="hood-dot"></span>
+      </div>
+
+      <div class="filter-panel-right">
+        <button class="clear-btn" id="clear-btn" onclick="clearFilters()">Clear filters</button>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-list" onclick="setView('list')">
+            <svg width="11" height="10" viewBox="0 0 11 10" fill="currentColor"><rect y="0" width="11" height="1.8"/><rect y="4.1" width="11" height="1.8"/><rect y="8.2" width="11" height="1.8"/></svg>
+            List
+          </button>
+          <button class="view-btn" id="btn-map" onclick="setView('map')">
+            <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M6 0C3.79 0 2 1.9 2 4.25c0 3.19 4 9.75 4 9.75s4-6.56 4-9.75C10 1.9 8.21 0 6 0zm0 6a1.75 1.75 0 110-3.5A1.75 1.75 0 016 6z"/></svg>
+            Map
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="list-view">
+    <div class="content-area">
+      <div class="results-bar">
+        <span class="results-meta" id="results-meta"></span>
+        <span class="active-filters-summary" id="filters-summary"></span>
+      </div>
+      <div class="places-grid" id="places-grid"></div>
+    </div>
+  </div>
+
+  <!-- MAP VIEW -->
+  <div id="map-view">
+    <div class="content-area" style="padding-bottom:0.75rem;">
+      <div class="results-bar">
+        <span class="results-meta" id="results-meta-map"></span>
+        <span class="active-filters-summary" id="filters-summary-map"></span>
+      </div>
+    </div>
+    <div class="map-wrapper">
+      <div id="map-container">
+        <div id="leaflet-map"></div>
+        <div class="map-sidebar">
+          <div class="map-sidebar-header" id="map-sidebar-header">All spots</div>
+          <div id="map-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allPlaces = [];
+    let activeCity = 'All';
+    let activeType = 'All';
+    let activeHood = 'All';
+    let currentView = 'list';
+    let leafletMap = null;
+    let markers = [];
+    let highlightedItem = null;
+
+    function toArr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
+
+    async function loadPlaces() {
+      const res = await fetch('/api/places');
+      allPlaces = await res.json();
+      buildSelects();
+      render();
+    }
+
+    function buildSelects() {
+      const cities = [...new Set(allPlaces.flatMap(p => toArr(p.city)))].sort();
+      const types  = [...new Set(allPlaces.flatMap(p => toArr(p.type)))].sort();
+      const hoods  = [...new Set(allPlaces.flatMap(p => toArr(p.neighborhood)))].sort();
+
+      const citySelect = document.getElementById('city-select');
+      const typeSelect = document.getElementById('type-select');
+      const hoodSelect = document.getElementById('hood-select');
+
+      citySelect.innerHTML = `<option value="All">All cities</option>` +
+        cities.map(c => `<option value="${c}" ${c===activeCity?'selected':''}>${c}</option>`).join('');
+      typeSelect.innerHTML = `<option value="All">All types</option>` +
+        types.map(t => `<option value="${t}" ${t===activeType?'selected':''}>${t}</option>`).join('');
+      hoodSelect.innerHTML = `<option value="All">All neighborhoods</option>` +
+        hoods.map(h => `<option value="${h}" ${h===activeHood?'selected':''}>${h}</option>`).join('');
+    }
+
+    function onCityChange(v) { activeCity = v; render(); }
+    function onTypeChange(v) { activeType = v; render(); }
+    function onHoodChange(v) { activeHood = v; render(); }
+
+    function clearFilters() {
+      activeCity = activeType = activeHood = 'All';
+      document.getElementById('city-select').value = 'All';
+      document.getElementById('type-select').value = 'All';
+      document.getElementById('hood-select').value = 'All';
+      render();
+    }
+
+    function filtered() {
+      return allPlaces.filter(p =>
+        (activeCity === 'All' || toArr(p.city).includes(activeCity)) &&
+        (activeType === 'All' || toArr(p.type).includes(activeType)) &&
+        (activeHood === 'All' || toArr(p.neighborhood).includes(activeHood))
+      );
+    }
+
+    function render() {
+      const places = filtered();
+      const total  = allPlaces.length;
+      const showing = places.length;
+      const filtersOn = activeCity !== 'All' || activeType !== 'All' || activeHood !== 'All';
+
+      document.getElementById('count-badge').textContent = `${total} spot${total !== 1 ? 's' : ''}`;
+      document.getElementById('city-dot').classList.toggle('show', activeCity !== 'All');
+      document.getElementById('type-dot').classList.toggle('show', activeType !== 'All');
+      document.getElementById('hood-dot').classList.toggle('show', activeHood !== 'All');
+      document.getElementById('clear-btn').classList.toggle('show', filtersOn);
+
+      const metaText = showing === total ? `Showing all ${total} places` : `${showing} of ${total} places`;
+      document.getElementById('results-meta').textContent = metaText;
+      document.getElementById('results-meta-map').textContent = metaText;
+
+      const parts = [];
+      if (activeCity !== 'All') parts.push(activeCity);
+      if (activeType !== 'All') parts.push(activeType);
+      if (activeHood !== 'All') parts.push(activeHood);
+      const summaryText = parts.length ? '→ ' + parts.join(' · ') : '';
+      document.getElementById('filters-summary').textContent = summaryText;
+      document.getElementById('filters-summary-map').textContent = summaryText;
+
+      renderCards(places);
+      if (currentView === 'map') renderMap(places);
+    }
+
+    function renderCards(places) {
+      const grid = document.getElementById('places-grid');
+      if (!places.length) {
+        grid.innerHTML = `<div class="empty-state"><p>No spots found.</p><span>Try adjusting the filters above.</span></div>`;
+        return;
+      }
+      grid.innerHTML = places.map(p => `
+        <div class="place-card">
+          <div class="card-top">
+            <span class="card-emoji">${p.emoji || '📍'}</span>
+            <div class="card-badges">
+              ${toArr(p.type).map(t => `<span class="badge badge-type">${t}</span>`).join('')}
+              ${toArr(p.neighborhood).map(n => `<span class="badge badge-hood">${n}</span>`).join('')}
+              ${toArr(p.city).map(c => `<span class="badge badge-city">${c}</span>`).join('')}
+              ${p.priceRange ? `<span class="badge badge-price">${p.priceRange}</span>` : ''}
+            </div>
+          </div>
+          <div class="card-name">${p.name}</div>
+          <div class="card-desc">${p.description}</div>
+          ${p.mustOrder ? `<div class="card-order"><span class="order-label">Order</span><span class="order-value">${p.mustOrder}</span></div>` : ''}
+          ${p.address ? `<div class="card-address">${p.address}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderMap(places) {
+      if (!leafletMap) {
+        leafletMap = L.map('leaflet-map', { zoomControl: true });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '© OpenStreetMap © CartoDB',
+          maxZoom: 19
+        }).addTo(leafletMap);
+      }
+      markers.forEach(m => m.marker.remove());
+      markers = [];
+
+      const pinIcon = (emoji) => L.divIcon({
+        className: '',
+        html: `<div style="background:#2B5C3F;color:#fff;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.2);"><span style="transform:rotate(45deg)">${emoji||'📍'}</span></div>`,
+        iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -34]
+      });
+
+      const validPlaces = places.filter(p => p.lat && p.lng);
+      validPlaces.forEach(p => {
+        const typeLabel = toArr(p.type).join(', ');
+        const hoodLabel = toArr(p.neighborhood).join(', ');
+        const marker = L.marker([p.lat, p.lng], { icon: pinIcon(p.emoji) })
+          .addTo(leafletMap)
+          .bindPopup(`<div class="popup-name">${p.name}</div><div class="popup-meta">${typeLabel} · ${hoodLabel}</div>${p.mustOrder ? `<div class="popup-order">→ ${p.mustOrder}</div>` : ''}`);
+        marker.on('click', () => highlightSidebar(p.id));
+        markers.push({ id: p.id, marker });
+      });
+
+      if (validPlaces.length) {
+        const isMobile = window.innerWidth < 768;
+        leafletMap.fitBounds(
+          L.latLngBounds(validPlaces.map(p => [p.lat, p.lng])),
+          { padding: isMobile ? [20, 20] : [40, 320] }
+        );
+      }
+
+      document.getElementById('map-sidebar-header').textContent =
+        `${places.length} spot${places.length !== 1 ? 's' : ''}`;
+
+      document.getElementById('map-list').innerHTML = places.map(p => `
+        <div class="map-place-item" id="map-item-${p.id}" onclick="flyTo(${p.id})">
+          <div class="map-item-name">${p.emoji || '📍'} ${p.name}</div>
+          <div class="map-item-meta">
+            <span>${toArr(p.type).join(', ')}</span>
+            <span>·</span>
+            <span>${toArr(p.neighborhood).join(', ')}</span>
+            ${p.priceRange ? `<span>·</span><span style="color:var(--gold)">${p.priceRange}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function flyTo(id) {
+      const found = markers.find(m => m.id === id);
+      if (found) { found.marker.openPopup(); leafletMap.panTo(found.marker.getLatLng(), { animate: true }); }
+      highlightSidebar(id);
+    }
+
+    function highlightSidebar(id) {
+      if (highlightedItem) document.getElementById(`map-item-${highlightedItem}`)?.classList.remove('highlighted');
+      const el = document.getElementById(`map-item-${id}`);
+      if (el) { el.classList.add('highlighted'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      highlightedItem = id;
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.getElementById('list-view').style.display = v === 'list' ? 'block' : 'none';
+      document.getElementById('map-view').style.display  = v === 'map'  ? 'block' : 'none';
+      document.getElementById('btn-list').classList.toggle('active', v === 'list');
+      document.getElementById('btn-map').classList.toggle('active',  v === 'map');
+      if (v === 'map') { renderMap(filtered()); setTimeout(() => leafletMap && leafletMap.invalidateSize(), 150); }
+    }
+
+    loadPlaces();
+    setView('list');
+  </script>
+</body>
+</html>
